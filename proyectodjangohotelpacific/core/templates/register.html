@@ -1,0 +1,125 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pacific Reef - Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    .btn-aqua-custom:hover {
+      background-color: #7eb1b4 !important;
+    }
+
+    .text-purple {
+      color: #432C81;
+    }
+
+    .form-control:focus {
+      border-color: #99CBCE;
+      box-shadow: 0 0 0 0.25rem rgba(153, 203, 206, 0.25);
+    }
+
+    #togglePassword {
+      cursor: pointer;
+      color: #6c757d;
+    }
+
+    #togglePassword:hover {
+      color: #432C81;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="border-bottom border-dark p-5" style="background-color: #99CBCE;"></div>
+
+  <div class="container" style="max-width: 900px;">
+
+    <div class="row align-items-center justify-content-center" style="min-height: 80vh;">
+
+      <div class="col-md-5 text-center">
+        <img src="{% static 'img/logo.png' %}" alt="Logo Pacific Reef" class="img-fluid" style="max-width: 380px;">
+      </div>
+
+      <div class="col-md-5">
+        <div class="text-center mb-4">
+          <h2 class="fw-bold text-purple" style="font-size: 2rem;">Bienvenido de vuelta</h2>
+          <h3 class="fw-normal text-purple mb-4" style="font-size: 1.6rem;">Acceder</h3>
+        </div>
+
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <input type="text" class="form-control p-3 shadow-sm border-light-subtle" placeholder="Nombre Completo"
+              required>
+          </div>
+
+          <div class="mb-3">
+            <div class="row g-2">
+              <div class="col-9">
+                <input type="text" id="rut_cuerpo" class="form-control p-3 shadow-sm border-light-subtle"
+                  placeholder="RUT (ej: 12345678)" maxlength="8" required>
+              </div>
+              <div class="col-3">
+                <input type="text" id="rut_dv" class="form-control p-3 shadow-sm border-light-subtle text-center"
+                  placeholder="DV" maxlength="1" required>
+              </div>
+            </div>
+            <small class="text-muted" style="font-size: 0.7rem;">Escribe el RUT sin puntos</small>
+          </div>
+
+          <div class="mb-3">
+            <input type="email" class="form-control p-3 shadow-sm border-light-subtle" placeholder="Email" required>
+          </div>
+
+          <div class="mb-1">
+            <div class="input-group shadow-sm">
+              <input type="password" id="password" class="form-control p-3 border-light-subtle" placeholder="Contraseña"
+                required>
+              <span class="input-group-text bg-white border-light-subtle" id="togglePassword">
+                <i class="fa-regular fa-eye" id="eyeIcon"></i>
+              </span>
+            </div>
+          </div>
+
+
+          <div class="d-grid mb-3 mt-4">
+            <button type="submit" class="btn btn-aqua-custom text-white fw-bold py-3 shadow-sm"
+              style="background-color: #99CBCE; border: none; font-size: 1.2rem;">
+              Acceder
+            </button>
+          </div>
+
+          <div class="text-center">
+            <p class="text-secondary small">Ya tienes una cuenta?
+              <a href="#" class="text-purple fw-bold text-decoration-none">Inicia Sesión</a>
+            </p>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+    const eyeIcon = document.querySelector('#eyeIcon');
+    togglePassword.addEventListener('click', function (e) {
+      const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+      password.setAttribute('type', type);
+      eyeIcon.classList.toggle('fa-eye');
+      eyeIcon.classList.toggle('fa-eye-slash');
+    });
+  </script>
+</body>
+</html>

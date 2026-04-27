@@ -1,0 +1,70 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-grow-1 {
+    flex-grow: 1 !important;
+}
+
+.btn-purple {
+    background-color: #432C81;
+    color: white;
+    border-radius: 20px;
+    border: none;
+    transition: 0.3s;
+}
+
+.btn-purple:hover {
+    background-color: #352266;
+    color: white;
+    transform: scale(1.05);
+}
+
+.bg-aqua {
+    background-color: #99CBCE;
+}
+
+.search-bar {
+    background-color: #432C81;
+    border-radius: 25px;
+    color: white;
+    padding: 5px 20px;
+}
+
+.search-bar input {
+    background: transparent;
+    border: none;
+    color: white;
+    outline: none;
+}
+
+.search-bar input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.room-card {
+    border: none;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.room-card-body {
+    background-color: #99CBCE;
+    color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 220px;
+}
+
+.room-img {
+    height: 250px;
+    object-fit: cover;
+}
