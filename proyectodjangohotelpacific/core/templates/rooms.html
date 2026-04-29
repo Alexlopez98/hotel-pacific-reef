@@ -62,7 +62,12 @@
             {% for hab in habitaciones %}
             <div class="col-md-4 habitacion-card">
                 <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                    <img src="{% static 'img/room1.jpg' %}" class="card-img-top" alt="Suite" style="height: 200px; object-fit: cover;">
+                    
+                    {% if hab.imagen %}
+                        <img src="{{ hab.imagen.url }}" class="card-img-top" alt="{{ hab.categoria }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <img src="{% static 'img/room1.jpg' %}" class="card-img-top" alt="Imagen por defecto" style="height: 200px; object-fit: cover;">
+                    {% endif %}
                     
                     <div class="card-body p-4 d-flex flex-column">
                         <h5 class="fw-bold mb-1 nombre-hab" style="color: #432C81;">{{ hab.categoria }} - Hab. {{ hab.numero }}</h5>
