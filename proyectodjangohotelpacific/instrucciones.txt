@@ -3,7 +3,7 @@ GUÍA DE EJECUCIÓN - PROYECTO HOTEL PACIFIC REEF
 
 Este documento contiene los pasos detallados para configurar y ejecutar el proyecto 
 'proyectodjangohotelpacific' conectándolo correctamente a la base de datos Oracle Cloud 
-y al almacenamiento de imágenes en Amazon S3.
+y al almacenamiento de imágenes en Amazon S3 de forma segura.
 
 1. REQUISITOS PREVIOS
 ---------------------
@@ -22,16 +22,29 @@ y al almacenamiento de imágenes en Amazon S3.
    python -m venv venv
    .\venv\Scripts\activate   (En Windows)
 
-3. Instalar las dependencias:
+3. Instalar las dependencias (Asegúrese de que el venv esté activo):
    pip install -r requirements.txt
 
-3. CONFIGURACIÓN DE LA BASE DE DATOS (ORACLE CLOUD)
----------------------------------------------------
-CADA DESARROLLADOR DEBE CONFIGURAR SU RUTA LOCAL. No subir estos cambios a GitHub.
+3. CONFIGURACIÓN DE SEGURIDAD (ARCHIVO .ENV)
+--------------------------------------------
+Para evitar bloqueos de seguridad en GitHub y proteger las cuentas, las llaves de AWS 
+se manejan de forma local.
 
-1. Descomprimir el Wallet en una carpeta segura (ej: C:/Wallet_IngenieriaSoftware).
-2. Abrir el archivo 'hotel/settings.py'.
-3. Localizar el bloque DATABASES y modificar los siguientes campos:
+1. En la raíz del proyecto (donde está el archivo manage.py), cree un nuevo archivo 
+   llamado exactamente: .env
+2. Abra el archivo .env con el Bloc de Notas y pegue lo siguiente:
+
+   AWS_ACCESS_KEY_ID=SOLICITAR_KEY_AL_ADMIN
+   AWS_SECRET_ACCESS_KEY=SOLICITAR_SECRET_AL_ADMIN
+
+3. Guarde y cierre el archivo. (Este archivo está en el .gitignore y no se subirá al repo).
+
+4. CONFIGURACIÓN DE LA BASE DE DATOS (ORACLE CLOUD)
+---------------------------------------------------
+Cada desarrollador debe configurar su ruta local en 'hotel/settings.py':
+
+1. Descomprimir el Wallet en una carpeta segura (ej: C:/Wallet_IngenieriaSoftware) la cual esta en onedrive compartido.
+2. Localizar el bloque DATABASES y modificar los siguientes campos:
 
    'OPTIONS': {
        'config_dir': 'C:/RUTA_A_SU_WALLET',
@@ -39,31 +52,23 @@ CADA DESARROLLADOR DEBE CONFIGURAR SU RUTA LOCAL. No subir estos cambios a GitHu
        'wallet_password': 'Su_Contraseña_Del_Wallet',
    }
 
-*IMPORTANTE: En Windows, use barras normales (/) en la ruta para evitar errores.*
-
-4. CONFIGURACIÓN DE IMÁGENES (AMAZON S3)
-----------------------------------------
-Por seguridad, las llaves de acceso no están en GitHub. Para que las imágenes carguen:
-
-1. Solicite las llaves de AWS al administrador (Alexander).
-2. En 'hotel/settings.py', busque la sección de Amazon S3 y reemplace:
-   
-   Amazon_ACCESS_KEY_ID = 'AKIAU73ZW2LFQSFRTHAX'
-   Amazon_SECRET_ACCESS_KEY = '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'
+*IMPORTANTE: Use barras normales (/) en las rutas para evitar errores en Windows.*
 
 5. EJECUCIÓN DEL SERVIDOR
 -------------------------
-Con el entorno virtual activo y en la carpeta raíz del proyecto, ejecute:
+Con el entorno virtual activo, ejecute:
 
 python manage.py runserver
 
-El servidor debería iniciar en: http://127.0.0.1:8000/
+El servidor debería iniciar correctamente en: http://127.0.0.1:8000/
 
 6. SOLUCIÓN DE PROBLEMAS FRECUENTES
 -----------------------------------
+* Error "Pillow is not installed": Ejecute 'pip install Pillow' nuevamente.
 * Error "Enter PEM pass phrase": Verifique la 'wallet_password' en settings.py.
 * Error "DPY-4000": El nombre 'ingenieriasoftware_low' debe coincidir con su tnsnames.ora.
-* Carga infinita: Verifique que su dirección IP actual esté autorizada en la ACL de Oracle Cloud (Consola de Red).
+* Imágenes no cargan: Verifique que el archivo .env tenga las llaves de AWS correctas.
 
 ------------------------------------------------
-Elaborado para entrega de Prototipo de Sistema - Pacific Reef.
+Analista a cargo: Alexander Lopez Sagredo
+Proyecto Pacific Reef - Abril 2026
