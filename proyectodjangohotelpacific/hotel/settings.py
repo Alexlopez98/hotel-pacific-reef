@@ -78,12 +78,15 @@ WSGI_APPLICATION = 'hotel.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'hotelpacificreef_low', # Verifica si en tu Wallet es _low, _medium o _high
+        'NAME': 'ingenieriasoftware_low',
         'USER': 'HOTEL_ADMIN',
-        'PASSWORD': 'Colita02551!',
+        'PASSWORD': 'Colita02551!', # Esta es la clave del usuario HOTEL_ADMIN
         'OPTIONS': {
-            # Ruta exacta donde descomprimiste el Wallet
             'config_dir': 'C:/Users/alexl/OneDrive/Desktop/Duoc online/Ingenieria de software/Database/Wallet_IngenieriaSoftware',
+            'wallet_location': 'C:/Users/alexl/OneDrive/Desktop/Duoc online/Ingenieria de software/Database/Wallet_IngenieriaSoftware',
+            
+            # AGREGA ESTA LÍNEA CON LA CLAVE QUE INVENTASTE AL DESCARGAR EL WALLET
+            'wallet_password': 'Colita02551!', 
         },
     }
 }

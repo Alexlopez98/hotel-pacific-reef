@@ -59,40 +59,29 @@
 
         <div class="row g-4 mt-2 justify-content-center" id="contenedor-habitaciones">
             
+            {% for hab in habitaciones %}
             <div class="col-md-4 habitacion-card">
                 <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
                     <img src="{% static 'img/room1.jpg' %}" class="card-img-top" alt="Suite" style="height: 200px; object-fit: cover;">
+                    
                     <div class="card-body p-4 d-flex flex-column">
-                        <h5 class="fw-bold mb-1 nombre-hab" style="color: #432C81;">Love Coffee Suite</h5>
+                        <h5 class="fw-bold mb-1 nombre-hab" style="color: #432C81;">{{ hab.categoria }} - Hab. {{ hab.numero }}</h5>
+                        
                         <div class="text-warning mb-2 small">
                             <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
                         </div>
-                        <p class="small mb-4 text-muted flex-grow-1"><i class="fas fa-bed me-2"></i>1 Hab. | <i class="fas fa-user me-2"></i>2 Huéspedes | <i class="fas fa-snowflake me-2"></i>Aire acondicionado</p>
                         
-                        <div class="mt-auto pt-3 border-top">
-                            <div class="text-center mb-3" data-precio="80000">
-                                <span class="fw-bold fs-4 d-block precio-display" style="color: #432C81;">$80.000</span>
-                                <small class="text-muted text-noche">/ noche</small>
-                            </div>
-                            <button class="btn w-100 text-uppercase fw-bold text-white shadow-sm" style="background-color: #99CBCE; border-radius: 8px;">Reservar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        <p class="small text-secondary mb-3" style="font-style: italic;">
+                            "{{ hab.descripcion|default:'Hermosa habitación equipada para tu descanso ideal en Algarrobo.' }}"
+                        </p>
 
-            <div class="col-md-4 habitacion-card">
-                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                    <img src="{% static 'img/room2.jpg' %}" class="card-img-top" alt="Studio" style="height: 200px; object-fit: cover;">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <h5 class="fw-bold mb-1 nombre-hab" style="color: #432C81;">Ocean Studio</h5>
-                        <div class="text-warning mb-2 small">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p class="small mb-4 text-muted flex-grow-1"><i class="fas fa-bed me-2"></i>1 Hab. | <i class="fas fa-user me-2"></i>4 Huéspedes | <i class="fas fa-water me-2"></i>Vista al mar</p>
+                        <p class="small mb-4 text-muted flex-grow-1">
+                            <i class="fas fa-user me-2"></i>{{ hab.capacidad }} Huéspedes | <i class="fas fa-check-circle me-2 text-success"></i>Disponible
+                        </p>
                         
                         <div class="mt-auto pt-3 border-top">
-                            <div class="text-center mb-3" data-precio="75000">
-                                <span class="fw-bold fs-4 d-block precio-display" style="color: #432C81;">$75.000</span>
+                            <div class="text-center mb-3" data-precio="{{ hab.precio_diario }}">
+                                <span class="fw-bold fs-4 d-block precio-display" style="color: #432C81;">${{ hab.precio_diario }}</span>
                                 <small class="text-muted text-noche">/ noche</small>
                             </div>
                             <button class="btn w-100 text-uppercase fw-bold text-white shadow-sm" style="background-color: #99CBCE; border-radius: 8px;">Reservar</button>
@@ -100,27 +89,11 @@
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-4 habitacion-card">
-                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                    <img src="{% static 'img/room3.jpg' %}" class="card-img-top" alt="Suite King" style="height: 200px; object-fit: cover;">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <h5 class="fw-bold mb-1 nombre-hab" style="color: #432C81;">Star King Suite</h5>
-                        <div class="text-warning mb-2 small">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p class="small mb-4 text-muted flex-grow-1"><i class="fas fa-bed me-2"></i>3 Hab. | <i class="fas fa-user me-2"></i>6 Huéspedes | <i class="fas fa-water me-2"></i>Vista al mar</p>
-                        
-                        <div class="mt-auto pt-3 border-top">
-                            <div class="text-center mb-3" data-precio="120000">
-                                <span class="fw-bold fs-4 d-block precio-display" style="color: #432C81;">$120.000</span>
-                                <small class="text-muted text-noche">/ noche</small>
-                            </div>
-                            <button class="btn w-100 text-uppercase fw-bold text-white shadow-sm" style="background-color: #99CBCE; border-radius: 8px;">Reservar</button>
-                        </div>
-                    </div>
-                </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <h4 style="color: #432C81;">No hay habitaciones registradas o disponibles.</h4>
             </div>
+            {% endfor %}
 
         </div>
     </main>

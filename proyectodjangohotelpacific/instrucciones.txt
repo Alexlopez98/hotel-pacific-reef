@@ -1,0 +1,75 @@
+GUÍA DE EJECUCIÓN - PROYECTO HOTEL PACIFIC REEF
+================================================
+
+Este documento contiene los pasos detallados para configurar y ejecutar el proyecto 
+'proyectodjangohotelpacific' conectándolo correctamente a la base de datos Oracle Cloud.
+
+1. REQUISITOS PREVIOS
+---------------------
+* Python 3.10 o superior instalado.
+* Git instalado y configurado.
+* El archivo Wallet (.zip) de la base de datos 'Ingenieria_Software' de Oracle Cloud.
+* El cliente de Oracle (librería oracledb instalada en el entorno virtual).
+
+2. CONFIGURACIÓN INICIAL DEL PROYECTO
+-------------------------------------
+1. Clonar el repositorio desde GitHub:
+   git clone <URL_DEL_REPOSITORIO>
+   cd hotel-pacific-reef/proyectodjangohotelpacific
+
+2. Crear y activar el entorno virtual (venv):
+   python -m venv venv
+   .\venv\Scripts\activate   (En Windows)
+
+3. Instalar las dependencias:
+   pip install django oracledb (o pip install -r requirements.txt si está disponible)
+
+3. CONFIGURACIÓN DE LA BASE DE DATOS (ORACLE CLOUD)
+---------------------------------------------------
+Para que el proyecto se conecte a la nube, CADA DESARROLLADOR DEBE CONFIGURAR SU RUTA LOCAL. 
+(No subir estas rutas personales a GitHub).
+
+1. Descomprimir el Wallet en una carpeta segura y permanente.
+2. Abrir el archivo 'hotel/settings.py'.
+3. Localizar el bloque DATABASES y modificar los siguientes campos:
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'ingenieriasoftware_low',
+        'USER': 'HOTEL_ADMIN',
+        'PASSWORD': 'La_Contraseña_De_Su_Base_De_Datos',
+        'OPTIONS': {
+            'config_dir': 'C:/RUTA_EXACTA_A_SU/Wallet_IngenieriaSoftware',
+            'wallet_location': 'C:/RUTA_EXACTA_A_SU/Wallet_IngenieriaSoftware',
+            'wallet_password': 'Su_Contraseña_Del_Wallet',
+        },
+    }
+}
+
+*IMPORTANTE: En Windows, cambie las barras invertidas (\) por barras normales (/) en la ruta.*
+
+4. EJECUCIÓN DEL SERVIDOR
+-------------------------
+Asegúrese de estar en la carpeta donde se encuentra el archivo 'manage.py' y con el entorno virtual activo.
+
+Ejecute:
+python manage.py runserver
+
+El servidor debería iniciar correctamente e indicar: 
+"Starting development server at http://127.0.0.1:8000/"
+
+5. SOLUCIÓN DE PROBLEMAS FRECUENTES
+-----------------------------------
+* Error "Enter PEM pass phrase": 
+  Asegúrese de haber agregado correctamente la 'wallet_password' en las OPTIONS de settings.py.
+
+* Error "DPY-4000: unable to find 'ingenieriasoftware_low'": 
+  Abra el archivo tnsnames.ora de su Wallet y verifique que el nombre coincida exactamente.
+
+* Carga infinita (La página se queda en blanco cargando eternamente): 
+  - Verifique que su dirección IP actual de internet esté autorizada en la "Access Control List" (Red) de Oracle Cloud.
+  - Asegúrese de no estar en una red bloqueada (ej. Wi-Fi corporativo/universitario).
+
+------------------------------------------------
+Elaborado para entrega de Prototipo de Sistema.
