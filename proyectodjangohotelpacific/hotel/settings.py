@@ -1,5 +1,9 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# --- CARGAR VARIABLES DE ENTORNO (.env) ---
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -99,6 +103,7 @@ STORAGES = {
 }
 
 # --- CONFIGURACIÓN DE AMAZON AWS S3 ---
+# Ahora las llaves se leen de forma segura desde tu archivo .env
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = 'pacific-reef-imagenes-alex2026' 
