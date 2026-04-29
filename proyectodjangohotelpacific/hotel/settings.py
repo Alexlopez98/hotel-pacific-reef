@@ -73,10 +73,18 @@ WSGI_APPLICATION = 'hotel.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# hotel/settings.py
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'hotelpacificreef_low', # Verifica si en tu Wallet es _low, _medium o _high
+        'USER': 'HOTEL_ADMIN',
+        'PASSWORD': 'Colita02551!',
+        'OPTIONS': {
+            # Ruta exacta donde descomprimiste el Wallet
+            'config_dir': 'C:/Users/alexl/OneDrive/Desktop/Duoc online/Ingenieria de software/Database/Wallet_IngenieriaSoftware',
+        },
     }
 }
 
