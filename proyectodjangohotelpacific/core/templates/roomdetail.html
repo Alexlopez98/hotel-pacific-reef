@@ -1,0 +1,310 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Pacific Reef - {{ hab.categoria }}</title>
+
+    <!-- Frameworks -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <style>
+        :root {
+            --color-primario: #432C81;
+            --color-secundario: #207b80;
+        }
+
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+            position: relative;
+        }
+
+        /* --- CALENDARIO SIN MANCHA AZUL --- */
+        .flatpickr-calendar {
+            width: auto !important;
+            border-radius: 15px !important;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        /* Quitar la mancha azul entre fechas */
+        .flatpickr-day.inRange,
+        .flatpickr-day:hover {
+            background: #f0ecf7 !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.startRange,
+        .flatpickr-day.endRange {
+            background: var(--color-primario) !important;
+            border-color: var(--color-primario) !important;
+            color: #fff !important;
+        }
+
+        /* --- GALERÍA ADAPTATIVA --- */
+        .img-extra {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .img-extra:hover {
+            transform: scale(1.05);
+        }
+
+        #carouselGaleria {
+            border: 1px solid #ddd;
+        }
+
+        .reserva-box {
+            cursor: pointer;
+            border: 1px solid #ddd !important;
+        }
+
+        /* Limpieza de inputs de precio */
+        #txt-precio-unitario,
+        #noches-count,
+        #subtotal,
+        #total-pago {
+            background: none !important;
+            padding: 0;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <nav class="navbar border-bottom border-dark py-2" style="background-color: var(--color-secundario);">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <a href="{% url 'index' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Pacific Reef" style="height: 40px;">
+            </a>
+            <div class="d-flex align-items-center">
+                <a href="{% url 'login' %}" class="text-dark">
+                    <i class="fas fa-user-circle fa-2x" style="color: var(--color-primario);"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- COPIAR ESTO: Bloque de alertas justo antes de la info de la habitación -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0 rounded-3"
+            role="alert">
+            <i
+                class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="container py-4 flex-grow-1">
+        <h1 class="display-3 fw-bold mb-4 text-center text-md-start"
+            style="font-family: serif; color: var(--color-primario);">
+            {{ hab.categoria }}
+        </h1>
+
+        <div class="row g-4">
+            <!-- Galería -->
+            <div class="col-lg-7">
+                <div class="main-image-container mb-3 shadow-sm rounded-4 overflow-hidden">
+                    {% if hab.imagen %}
+                    <img src="{{ hab.imagen.url }}" class="img-fluid w-100"
+                        style="max-height: 500px; object-fit: cover;">
+                    {% else %}
+                    <img src="{% static 'img/room1.jpg' %}" class="img-fluid w-100">
+                    {% endif %}
+                </div>
+
+                <div class="mt-4">
+                    <h4 class="mb-3">Galería</h4>
+                    <!-- CARRUSEL (Móvil) -->
+                    <div id="carouselGaleria" class="carousel slide d-md-none shadow-sm rounded-4 overflow-hidden"
+                        data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for img_obj in hab.imagenes_extra.all %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <img src="{{ img_obj.imagen.url }}" class="d-block w-100"
+                                    style="height: 300px; object-fit: cover;" onclick="ampliarImagen(this.src)">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselGaleria"
+                            data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#carouselGaleria"
+                            data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        </button>
+                    </div>
+
+                    <!-- GRILLA (PC) -->
+                    <div class="row d-none d-md-flex">
+                        {% for img_obj in hab.imagenes_extra.all %}
+                        <div class="col-md-3 mb-3">
+                            <img src="{{ img_obj.imagen.url }}" class="img-fluid rounded shadow-sm img-extra"
+                                style="height: 120px; width: 100%; object-fit: cover;"
+                                onclick="ampliarImagen(this.src)">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reserva -->
+            <div class="col-lg-5">
+                <form action="{% url 'crear_reserva_provisional' hab.id_habitacion %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="fecha_ingreso" id="input_ingreso">
+                    <input type="hidden" name="fecha_salida" id="input_salida">
+                    <input type="hidden" name="total_estimado" id="input_total">
+
+                    <div class="bg-white p-4 rounded-4 shadow-lg border">
+                        <div id="header-reserva" class="mb-4">
+                            <h2 id="txt-noches" class="fw-bold mb-1">Selecciona fechas</h2>
+                            <p class="text-muted small mb-0">Introduce tus fechas para el total</p>
+                        </div>
+
+                        <div class="reserva-box rounded-3 d-flex mb-3" id="trigger-calendar">
+                            <div class="flex-fill p-3 border-end">
+                                <label class="d-block small fw-bold text-uppercase mb-0"
+                                    style="font-size: 0.65rem;">Llegada</label>
+                                <input type="text" id="view-llegada"
+                                    class="form-control border-0 p-0 shadow-none bg-transparent"
+                                    placeholder="dd/mm/aaaa" readonly>
+                            </div>
+                            <div class="flex-fill p-3">
+                                <label class="d-block small fw-bold text-uppercase mb-0"
+                                    style="font-size: 0.65rem;">Salida</label>
+                                <input type="text" id="view-salida"
+                                    class="form-control border-0 p-0 shadow-none bg-transparent"
+                                    placeholder="dd/mm/aaaa" readonly>
+                            </div>
+                        </div>
+
+                        <input type="text" id="datepicker" class="d-none" data-bloqueadas='{{ fechas_bloqueadas|safe }}'
+                            data-precio="{{ hab.precio_diario|stringformat:'d' }}">
+
+                        <div id="resumen-reserva" class="d-none">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>$<span id="txt-precio-unitario">0</span> x <span id="noches-count">0</span>
+                                    noches</span>
+                                <span id="subtotal" class="fw-bold">$0</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fs-4 fw-bold mb-4">
+                                <span>Total</span>
+                                <span id="total-pago" style="color: var(--color-primario);">$0</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-reservar"
+                            class="btn btn-lg w-100 rounded-3 fw-bold text-uppercase py-3 text-white" disabled
+                            style="background-color: var(--color-primario);">
+                            Reservar Ahora
+                        </button>
+
+                        <div class="text-center mt-3">
+                            <button type="button" id="btn-clear" class="btn btn-link btn-sm text-dark p-0">Borrar
+                                fechas</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Imagen -->
+    <div class="modal fade" id="modalImagen" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-body p-0 text-center">
+                    <img id="imgExpandida" src="" class="img-fluid rounded-4 shadow-lg">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dateInput = document.getElementById('datepicker');
+            const precioNoche = parseInt(dateInput.dataset.precio || 0);
+
+            // Detectar ancho de pantalla
+            const esMovil = window.innerWidth < 768;
+
+            document.getElementById('txt-precio-unitario').innerText = precioNoche.toLocaleString('es-CL');
+
+            const fp = flatpickr("#datepicker", {
+                mode: "range",
+                showMonths: esMovil ? 1 : 2, // 1 en móvil, 2 en PC
+                minDate: "today",
+                locale: "es",
+                dateFormat: "Y-m-d",
+                disable: JSON.parse(dateInput.dataset.bloqueadas || "[]"),
+                positionElement: document.getElementById('trigger-calendar'),
+                static: esMovil, // Ayuda al posicionamiento en móvil
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        const inicio = selectedDates[0];
+                        const fin = selectedDates[1];
+
+                        const offset = inicio.getTimezoneOffset() * 60000;
+                        document.getElementById('input_ingreso').value = new Date(inicio - offset).toISOString().split('T')[0];
+                        document.getElementById('input_salida').value = new Date(fin - offset).toISOString().split('T')[0];
+
+                        document.getElementById('view-llegada').value = inicio.toLocaleDateString('es-CL');
+                        document.getElementById('view-salida').value = fin.toLocaleDateString('es-CL');
+
+                        const diffDays = Math.ceil(Math.abs(fin - inicio) / (1000 * 60 * 60 * 24));
+                        const total = diffDays * precioNoche;
+
+                        document.getElementById('txt-noches').innerText = `${diffDays} noches`;
+                        document.getElementById('noches-count').innerText = diffDays;
+                        document.getElementById('subtotal').innerText = `$${total.toLocaleString('es-CL')}`;
+                        document.getElementById('total-pago').innerText = `$${total.toLocaleString('es-CL')}`;
+                        document.getElementById('input_total').value = total;
+
+                        document.getElementById('resumen-reserva').classList.remove('d-none');
+                        document.getElementById('btn-reservar').disabled = false;
+                    }
+                }
+            });
+
+            document.getElementById('trigger-calendar').addEventListener('click', () => fp.open());
+            document.getElementById('btn-clear').addEventListener('click', () => {
+                fp.clear();
+                document.getElementById('resumen-reserva').classList.add('d-none');
+                document.getElementById('btn-reservar').disabled = true;
+                document.getElementById('view-llegada').value = "";
+                document.getElementById('view-salida').value = "";
+                document.getElementById('txt-noches').innerText = "Selecciona fechas";
+            });
+        });
+
+        function ampliarImagen(src) {
+            const modal = new bootstrap.Modal(document.getElementById('modalImagen'));
+            document.getElementById('imgExpandida').src = src;
+            modal.show();
+        }
+    </script>
+</body>
+
+</html>

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'core',
     'storages', # Librería para AWS
 ]
@@ -61,13 +62,13 @@ WSGI_APPLICATION = 'hotel.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'ingenieriasoftware_low',
+        'NAME': 'ingenieriasoftware_low',  # ojo: debe existir en tnsnames.ora
         'USER': 'HOTEL_ADMIN',
         'PASSWORD': 'Colita02551!',
         'OPTIONS': {
-            'config_dir': 'C:/Users/alexl/OneDrive/Desktop/Duoc online/Ingenieria de software/Database/Wallet_IngenieriaSoftware',
-            'wallet_location': 'C:/Users/alexl/OneDrive/Desktop/Duoc online/Ingenieria de software/Database/Wallet_IngenieriaSoftware',
-            'wallet_password': 'Colita02551!', 
+            'config_dir': r'C:\Users\bboca\Desktop\DUOCUC\wallets\Wallet_IngenieriaSoftware',
+            'wallet_location': r'C:\Users\bboca\Desktop\DUOCUC\wallets\Wallet_IngenieriaSoftware',
+            'wallet_password': 'Colita02551!',
         },
     }
 }
@@ -85,6 +86,15 @@ LANGUAGE_CODE = 'es-cl'
 TIME_ZONE = 'America/Santiago'
 USE_I18N = True
 USE_TZ = True
+
+LANGUAGE_CODE = 'es-cl'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = '.'
+NUMBER_GROUPING = 3
+
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
