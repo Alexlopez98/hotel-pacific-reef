@@ -1,5 +1,31 @@
 from django.db import models
 
+class Usuario(models.Model):
+    # Definimos las opciones (Valor para la BD, Etiqueta para el usuario)
+    ROLES_CHOICES = [
+        ('Turista', 'Turista'),
+        ('Administrador', 'Administrador'),
+    ]
+
+    id_usuario = models.AutoField(primary_key=True)
+    rut = models.CharField(max_length=12, unique=True)
+    nombre = models.CharField(max_length=100)
+    correo = models.CharField(max_length=100, unique=True)
+    
+    # Agregamos 'choices' aquí
+    rol = models.CharField(
+        max_length=20, 
+        choices=ROLES_CHOICES, 
+        default='Turista'
+    )
+
+    class Meta:
+        managed = False # Seguimos respetando tu tabla de Oracle
+        db_table = 'usuarios'
+
+    def __str__(self):
+        return self.nombre
+
 class Habitacion(models.Model):
     id_habitacion = models.AutoField(primary_key=True)
     numero = models.CharField(max_length=10, unique=True)
@@ -48,3 +74,19 @@ class Reserva(models.Model):
     class Meta:
         managed = False
         db_table = 'reservas'
+
+
+class Pago(models.Model):
+    id_pago = models.AutoField(primary_key=True)
+
+    id_reserva = models.IntegerField(db_column='id_reserva')
+
+    monto_pagado = models.DecimalField(max_digits=10, decimal_places=2, db_column='monto_pagado')
+
+    metodo_pago = models.CharField(max_length=50)
+
+    fecha_pago = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'pagos'

@@ -1,15 +1,26 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
-from django.contrib import messages 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from functools import wraps
 from .models import Habitacion, Reserva
 from .forms import HabitacionForm
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 
-# --- VISTAS PÚBLICAS ---
 
+# --- DECORADOR ---
+def redirect_if_authenticated(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('habitaciones')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+# --- VISTAS PÚBLICAS ---
+@redirect_if_authenticated
 def index_view(request):
     return render(request, 'index.html')
 
@@ -19,78 +30,92 @@ def rooms_view(request):
         'habitaciones': lista_habitaciones
     })
 
+
+@redirect_if_authenticated
 def register_view(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre_completo')
         email = request.POST.get('email')
         password = request.POST.get('password')
-        
+
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Este correo ya está registrado.')
-            return redirect('registro') 
-            
-        user = User.objects.create_user(username=email, email=email, password=password)
+            return redirect('registro')
+
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password
+        )
         user.first_name = nombre
         user.save()
-        
+
         login(request, user)
         return redirect('habitaciones')
+
     return render(request, 'register.html')
 
+
+@redirect_if_authenticated
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
+
         user = authenticate(request, username=email, password=password)
-        
+
         if user is not None:
             login(request, user)
             return redirect('habitaciones')
         else:
             messages.error(request, 'Correo o contraseña incorrectos.')
             return redirect('login')
+
     return render(request, 'login.html')
 
+
 def room_detail(request, hab_id):
-    # Asegúrate que el campo en tu modelo sea id_habitacion
     habitacion = get_object_or_404(Habitacion, id_habitacion=hab_id)
-    
-    # Buscamos las reservas activas para bloquear fechas en el calendario
+
     reservas = Reserva.objects.filter(
-        habitacion=habitacion, 
+        habitacion=habitacion,
         estado_reserva__in=['Confirmada', 'Pendiente']
     )
-    
+
     fechas_bloqueadas = []
     for r in reservas:
         actual = r.fecha_ingreso
         while actual <= r.fecha_salida:
             fechas_bloqueadas.append(actual.strftime('%Y-%m-%d'))
             actual += timedelta(days=1)
-            
-    context = {
+
+    return render(request, 'roomdetail.html', {
         'hab': habitacion,
         'fechas_bloqueadas': json.dumps(fechas_bloqueadas)
-    }
-    return render(request, 'roomdetail.html', context)
+    })
 
-# --- FLUJO DE RESERVA Y PAGO ---
 
+# --- RESERVA ---
+@login_required
 def crear_reserva_provisional(request, id_habitacion):
     if request.method == 'POST':
         hab = get_object_or_404(Habitacion, id_habitacion=id_habitacion)
-        
-        # Obtener datos del POST (Nombres exactos del HTML)
-        f_ingreso = request.POST.get('fecha_ingreso')
-        f_salida = request.POST.get('fecha_salida')
+
+        f_ingreso_str = request.POST.get('fecha_ingreso')
+        f_salida_str = request.POST.get('fecha_salida')
         total_str = request.POST.get('total_estimado')
 
-        # VALIDACIÓN 1: Fechas vacías
-        if not f_ingreso or not f_salida:
-            messages.error(request, "⚠️ Por favor, selecciona las fechas en el calendario.")
+        if not f_ingreso_str or not f_salida_str:
+            messages.error(request, "⚠️ Selecciona fechas válidas.")
             return redirect('roomdetail', hab_id=id_habitacion)
 
-        # VALIDACIÓN 2: Anticolisión (No pisar otras reservas)
+        f_ingreso = datetime.strptime(f_ingreso_str, "%Y-%m-%d").date()
+        f_salida = datetime.strptime(f_salida_str, "%Y-%m-%d").date()
+
+        if f_salida <= f_ingreso:
+            messages.error(request, "La fecha de salida debe ser mayor a la de ingreso.")
+            return redirect('roomdetail', hab_id=id_habitacion)
+
         existe_choque = Reserva.objects.filter(
             habitacion=hab,
             estado_reserva__in=['Confirmada', 'Pendiente'],
@@ -99,21 +124,21 @@ def crear_reserva_provisional(request, id_habitacion):
         ).exists()
 
         if existe_choque:
-            messages.warning(request, "¡Lo sentimos! Alguna de las fechas seleccionadas ya no está disponible. 😊")
+            messages.warning(request, "Fechas no disponibles.")
             return redirect('roomdetail', hab_id=id_habitacion)
 
-        # CREACIÓN DE LA RESERVA ÚNICA (Estado Pendiente)
         try:
             total = int(total_str)
+
             reserva_nueva = Reserva.objects.create(
-                id_usuario=request.user.id if request.user.is_authenticated else None,
+                id_usuario=request.user.id,
                 habitacion=hab,
                 fecha_ingreso=f_ingreso,
                 fecha_salida=f_salida,
                 total_estimado=total,
                 estado_reserva='Pendiente'
             )
-            
+
             pago_parcial = int(total * 0.3)
 
             return render(request, 'pago.html', {
@@ -124,53 +149,62 @@ def crear_reserva_provisional(request, id_habitacion):
                 'total': total,
                 'parcial': pago_parcial,
             })
-        except Exception as e:
-            messages.error(request, "Error al procesar la reserva. Inténtalo de nuevo.")
+
+        except Exception:
+            messages.error(request, "Error al crear la reserva.")
             return redirect('roomdetail', hab_id=id_habitacion)
 
     return redirect('habitaciones')
 
+
 @login_required
 def confirmar_pago_final(request, id_reserva):
-    """
-    ESTO EDITA LA RESERVA, NO CREA OTRA.
-    """
     if request.method == 'POST':
-        # Buscamos la reserva pendiente por su ID
         reserva = get_object_or_404(Reserva, id_reserva=id_reserva)
-        
-        # Cambiamos el estado de la reserva existente
         reserva.estado_reserva = 'Confirmada'
-        reserva.save() # Aquí se guarda el cambio en la misma fila de la BD
-        
-        messages.success(request, f"¡Reserva #{reserva.id_reserva} confirmada! Te esperamos.")
+        reserva.save()
+
+        messages.success(request, f"Reserva #{reserva.id_reserva} confirmada.")
         return redirect('habitaciones')
-    
+
     return redirect('habitaciones')
 
-# --- VISTAS DE ADMINISTRACIÓN (CRUD) ---
-
+@login_required(login_url='login')
+def perfil_usuario(request):
+    # 'user' ya viene incluido en el request gracias a Django
+    return render(request, 'user.html')
+# --- ADMIN ---
 @login_required
 def agregar_habitacion(request):
     if request.method == 'POST':
         form = HabitacionForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Habitación añadida con éxito.')
+            messages.success(request, 'Habitación añadida.')
             return redirect('habitaciones')
     else:
         form = HabitacionForm()
-    return render(request, 'form_habitacion.html', {'form': form, 'titulo': 'Nueva Habitación'})
+
+    return render(request, 'form_habitacion.html', {
+        'form': form,
+        'titulo': 'Nueva Habitación'
+    })
+
 
 @login_required
 def editar_habitacion(request, id):
     habitacion = get_object_or_404(Habitacion, id_habitacion=id)
+
     if request.method == 'POST':
         form = HabitacionForm(request.POST, instance=habitacion)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Habitación actualizada correctamente.')
+            messages.success(request, 'Habitación actualizada.')
             return redirect('habitaciones')
     else:
         form = HabitacionForm(instance=habitacion)
-    return render(request, 'form_habitacion.html', {'form': form, 'titulo': 'Editar Habitación'})
+
+    return render(request, 'form_habitacion.html', {
+        'form': form,
+        'titulo': 'Editar Habitación'
+    })

@@ -1,27 +1,24 @@
 from django.urls import path
-from .views import (
-    index_view, login_view, register_view, rooms_view, 
-    agregar_habitacion, editar_habitacion, room_detail, 
-    crear_reserva_provisional, confirmar_pago_final # <-- Asegúrate de importar las nuevas
-)
+from django.contrib.auth import views as auth_views
+from . import views
 
 urlpatterns = [
-    path('', index_view, name='index'),
-    path('login/', login_view, name='login'),
-    path('register/', register_view, name='registro'), 
-    path('habitaciones/', rooms_view, name='habitaciones'),
-    
-    # Detalle de la habitación
-    path('habitacion/<int:hab_id>/', room_detail, name='roomdetail'),
+    path('', views.index_view, name='index'),
+    path('login/', views.login_view, name='login'),
+    path('register/', views.register_view, name='registro'),
+    path('habitaciones/', views.rooms_view, name='habitaciones'),
 
-    # 1. PASO INTERMEDIO: Esta es la que procesa el calendario y manda a pago.html
-    # Cambiamos 'crear_reserva' por una que valide y redirija al pago
-    path('reservar/provisional/<int:id_habitacion>/', crear_reserva_provisional, name='crear_reserva_provisional'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
-    # 2. PASO FINAL: Esta es la que usa el botón "PAGAR" en pago.html para guardar en la BD
-    path('reservar/confirmar/<int:id_reserva>/', confirmar_pago_final, name='confirmar_pago_final'),
-    
-    # Rutas de Gestión
-    path('habitaciones/nueva/', agregar_habitacion, name='agregar_habitacion'),
-    path('habitaciones/editar/<int:id>/', editar_habitacion, name='editar_habitacion'),
+    path('habitacion/<int:hab_id>/', views.room_detail, name='roomdetail'),
+
+    path('reservar/provisional/<int:id_habitacion>/', views.crear_reserva_provisional, name='crear_reserva_provisional'),
+
+    path('reservar/confirmar/<int:id_reserva>/', views.confirmar_pago_final, name='confirmar_pago_final'),
+
+    path('habitaciones/nueva/', views.agregar_habitacion, name='agregar_habitacion'),
+
+    path('habitaciones/editar/<int:id>/', views.editar_habitacion, name='editar_habitacion'),
+
+    path('perfil/', views.perfil_usuario, name='perfil'),
 ]

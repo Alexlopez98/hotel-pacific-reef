@@ -48,9 +48,17 @@
                 <img src="{% static 'img/logo.png' %}" alt="Pacific Reef" style="height: 45px;">
             </a>
             <div class="d-flex align-items-center gap-3">
-                <a href="{% url 'login' %}" class="text-dark">
+                {% if user.is_authenticated %}
+                <!-- Si está logeado, va al perfil -->
+                <a href="{% url 'perfil' %}" class="text-dark">
                     <i class="fas fa-user-circle fa-2x" style="color: var(--color-primario);"></i>
                 </a>
+                {% else %}
+                <!-- Si NO está logeado, va al login -->
+                <a href="{% url 'login' %}" class="text-dark">
+                    <i class="far fa-user-circle fa-2x" style="color: var(--color-primario);"></i>
+                </a>
+                {% endif %}
             </div>
         </div>
     </nav>
