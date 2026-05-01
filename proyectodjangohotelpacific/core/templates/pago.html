@@ -46,7 +46,8 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
                 <div class="card card-pago p-4">
-                    <h2 class="text-center fw-bold mb-4" style="color: var(--color-primario);">Resumen de tu Reserva</h2>
+                    <h2 class="text-center fw-bold mb-1" style="color: var(--color-primario);">Resumen de tu Reserva</h2>
+                    <small class="text-muted text-center fw-bold mb-4"">Tienes 2 minutos para reservar, antes de liberar los días.</small>
                     
                     <!-- Información de la Habitación -->
                     <div class="d-flex align-items-center mb-4 p-3 bg-light rounded-3">
@@ -85,7 +86,7 @@
 
                     <!-- FORMULARIO DE CONFIRMACIÓN -->
                     <!-- Importante: El action usa el ID de la reserva actual para MODIFICARLA -->
-                    <form action="{% url 'confirmar_pago_final' reserva.id_reserva %}" method="POST">
+                    <form action="{% url 'confirmar_pago_final' reserva.id_reserva hab.id_habitacion %}" method="POST">
                         {% csrf_token %}
                         
                         <div class="mb-4">

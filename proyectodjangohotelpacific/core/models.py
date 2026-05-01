@@ -61,13 +61,38 @@ class HabitacionImagen(models.Model):
         return f"Imagen extra de Hab {self.habitacion.numero}"
 
 class Reserva(models.Model):
+    ESTADOS = [
+        ('Pendiente', 'Pendiente'),
+        ('Confirmada', 'Confirmada'),
+        ('Cancelada', 'Cancelada'),
+    ]
+
     id_reserva = models.AutoField(primary_key=True)
-    id_usuario = models.IntegerField() 
-    habitacion = models.ForeignKey(Habitacion, on_delete=models.DO_NOTHING, db_column='id_habitacion')
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        db_column='ID_USUARIO'
+    )
+
+    habitacion = models.ForeignKey(
+        Habitacion,
+        on_delete=models.DO_NOTHING,
+        db_column='id_habitacion'
+    )
+
     fecha_ingreso = models.DateField()
     fecha_salida = models.DateField()
-    estado_reserva = models.CharField(max_length=20, default='Pendiente')
+
+    estado_reserva = models.CharField(
+        max_length=20,
+        choices=ESTADOS,
+        default='Pendiente'
+    )
+
     total_estimado = models.DecimalField(max_digits=10, decimal_places=2)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = False

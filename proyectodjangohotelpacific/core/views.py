@@ -4,14 +4,36 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from functools import wraps
-# Importamos el Perfil recién creado
 from .models import Habitacion, Reserva, Pago, Perfil
 from .forms import HabitacionForm
 from datetime import timedelta, datetime
+from django.utils import timezone
 import json
 
+# =========================
+# LÓGICA DE CANCELACIÓN (Añadida)
+# =========================
+def cancelar_reservas_expiradas():
+    # 1. Definimos el tiempo límite (10 segundos atrás)
+    limite = timezone.now() - timedelta(seconds=10)
+    
+    # PASO A: Las que llevan > 10 seg pendientes, pasan a 'Cancelada'
+    # (Esto las marca para ser eliminadas en el siguiente ciclo o simplemente para avisar)
+    Reserva.objects.filter(
+        estado_reserva='Pendiente',
+        fecha_creacion__lt=limite
+    ).update(estado_reserva='Cancelada')
+    
+    # PASO B: Las que ya están como 'Cancelada' se eliminan de la base de datos
+    # Así limpiamos lo que el sistema ya descartó antes
+    eliminadas, _ = Reserva.objects.filter(estado_reserva='Cancelada').delete()
+    
+    if eliminadas > 0:
+        print(f"DEBUG: Cinta transportadora activa. Se eliminaron {eliminadas} registros obsoletos.")
 
-# --- DECORADOR ---
+# =========================
+# DECORADOR
+# =========================
 def redirect_if_authenticated(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
@@ -20,18 +42,23 @@ def redirect_if_authenticated(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-# --- VISTAS PÚBLICAS ---
+# =========================
+# PUBLICAS
+# =========================
 @redirect_if_authenticated
 def index_view(request):
     return render(request, 'index.html')
 
 def rooms_view(request):
+    cancelar_reservas_expiradas()  # 👈 Se limpia al cargar la lista
     lista_habitaciones = Habitacion.objects.all()
     return render(request, 'rooms.html', {
         'habitaciones': lista_habitaciones
     })
 
-
+# =========================
+# REGISTRO
+# =========================
 @redirect_if_authenticated
 def register_view(request):
     if request.method == 'POST':
@@ -43,26 +70,22 @@ def register_view(request):
 
         rut_completo = f"{rut_cuerpo}-{rut_dv}"
 
-        # 1. Validar correo en Django
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Este correo ya está registrado.')
             return redirect('registro')
 
-        # 2. Validar RUT en tu tabla Perfil
         if Perfil.objects.filter(rut=rut_completo).exists():
             messages.error(request, 'Este RUT ya está registrado.')
             return redirect('registro')
 
-        # 3. Crear usuario base
         user = User.objects.create_user(
-            username=email, # Usamos el email como username para facilitar el login
+            username=email,
             email=email,
             password=password
         )
         user.first_name = nombre
         user.save()
 
-        # 4. Crear Perfil extendido en Oracle
         Perfil.objects.create(
             usuario=user,
             rut=rut_completo,
@@ -74,34 +97,32 @@ def register_view(request):
 
     return render(request, 'register.html')
 
-
+# =========================
+# LOGIN
+# =========================
 @redirect_if_authenticated
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-
-        # Como en el registro pusimos el email en username, autenticamos directamente
         user = authenticate(request, username=email, password=password)
-
-        if user is not None:
+        if user:
             login(request, user)
             return redirect('habitaciones')
-        else:
-            messages.error(request, 'Correo o contraseña incorrectos.')
-            return redirect('login')
-
+        messages.error(request, 'Correo o contraseña incorrectos.')
+        return redirect('login')
     return render(request, 'login.html')
 
-
+# =========================
+# DETALLE HABITACION
+# =========================
 def room_detail(request, hab_id):
+    cancelar_reservas_expiradas()
     habitacion = get_object_or_404(Habitacion, id_habitacion=hab_id)
-
     reservas = Reserva.objects.filter(
         habitacion=habitacion,
         estado_reserva__in=['Confirmada', 'Pendiente']
     )
-
     fechas_bloqueadas = []
     for r in reservas:
         actual = r.fecha_ingreso
@@ -114,100 +135,115 @@ def room_detail(request, hab_id):
         'fechas_bloqueadas': json.dumps(fechas_bloqueadas)
     })
 
-
-# --- RESERVA ---
+# =========================
+# RESERVA
+# =========================
 @login_required
 def crear_reserva_provisional(request, id_habitacion):
-    if request.method == 'POST':
-        hab = get_object_or_404(Habitacion, id_habitacion=id_habitacion)
+    if request.method != 'POST':
+        return redirect('habitaciones')
+    
+    hab = get_object_or_404(Habitacion, id_habitacion=id_habitacion)
+    f_ingreso_str = request.POST.get('fecha_ingreso')
+    f_salida_str = request.POST.get('fecha_salida')
+    total_str = request.POST.get('total_estimado')
 
-        f_ingreso_str = request.POST.get('fecha_ingreso')
-        f_salida_str = request.POST.get('fecha_salida')
-        total_str = request.POST.get('total_estimado')
+    if not f_ingreso_str or not f_salida_str or not total_str:
+        messages.error(request, "Faltan datos.")
+        return redirect('roomdetail', hab_id=id_habitacion)
 
-        if not f_ingreso_str or not f_salida_str:
-            messages.error(request, "⚠️ Selecciona fechas válidas.")
-            return redirect('roomdetail', hab_id=id_habitacion)
-
+    try:
         f_ingreso = datetime.strptime(f_ingreso_str, "%Y-%m-%d").date()
         f_salida = datetime.strptime(f_salida_str, "%Y-%m-%d").date()
+        total = int(total_str)
 
         if f_salida <= f_ingreso:
-            messages.error(request, "La fecha de salida debe ser mayor a la de ingreso.")
+            messages.error(request, "Fechas inválidas.")
             return redirect('roomdetail', hab_id=id_habitacion)
 
-        existe_choque = Reserva.objects.filter(
+        existe = Reserva.objects.filter(
             habitacion=hab,
-            estado_reserva__in=['Confirmada', 'Pendiente'],
+            estado_reserva__in=['Pendiente', 'Confirmada'],
             fecha_ingreso__lt=f_salida,
             fecha_salida__gt=f_ingreso
         ).exists()
 
-        if existe_choque:
+        if existe:
             messages.warning(request, "Fechas no disponibles.")
             return redirect('roomdetail', hab_id=id_habitacion)
 
+        reserva = Reserva.objects.create(
+            usuario=request.user,
+            habitacion=hab,
+            fecha_ingreso=f_ingreso,
+            fecha_salida=f_salida,
+            total_estimado=total,
+            estado_reserva='Pendiente'
+        )
+
+        return render(request, 'pago.html', {
+            'hab': hab,
+            'reserva': reserva,
+            'total': total,
+            'parcial': int(total * 0.3),
+        })
+
+    except Exception as e:
+        print("ERROR REAL:", e)
+        messages.error(request, "Error al crear reserva.")
+        return redirect('roomdetail', hab_id=id_habitacion)
+
+# =========================
+# CONFIRMAR PAGO
+# =========================
+@login_required
+def confirmar_pago_final(request, id_reserva, id_habitacion): # <--- Recibe ambos IDs
+    if request.method == 'POST':
         try:
-            total = int(total_str)
+            # Intentamos buscar la reserva en la base de datos
+            reserva = Reserva.objects.get(id_reserva=id_reserva)
+            
+            # Si existe, la confirmamos
+            reserva.estado_reserva = 'Confirmada'
+            reserva.save()
+            
+            messages.success(request, "¡Pago procesado! Tu reserva en Pacific Reef está lista.")
+            return redirect('habitaciones')
 
-            reserva_nueva = Reserva.objects.create(
-                id_usuario=request.user.id,
-                habitacion=hab,
-                fecha_ingreso=f_ingreso,
-                fecha_salida=f_salida,
-                total_estimado=total,
-                estado_reserva='Pendiente'
-            )
-
-            pago_parcial = int(total * 0.3)
-
-            return render(request, 'pago.html', {
-                'hab': hab,
-                'reserva': reserva_nueva,
-                'ingreso': f_ingreso,
-                'salida': f_salida,
-                'total': total,
-                'parcial': pago_parcial,
-            })
-
-        except Exception:
-            messages.error(request, "Error al crear la reserva.")
+        except Reserva.DoesNotExist:
+            # Si NO existe (porque tu 'cinta transportadora' la borró de Oracle)
+            # Mandamos el mensaje que capturará tu bloque HTML con el icono de alerta
+            messages.error(request, "El tiempo de reserva ha expirado (10 segundos). Por favor, intenta reservar de nuevo.")
+            
+            # Redirigimos al detalle de la habitación usando el id_habitacion que pasamos por la URL
             return redirect('roomdetail', hab_id=id_habitacion)
 
     return redirect('habitaciones')
 
-
-@login_required
-def confirmar_pago_final(request, id_reserva):
-    if request.method == 'POST':
-        reserva = get_object_or_404(Reserva, id_reserva=id_reserva)
-        reserva.estado_reserva = 'Confirmada'
-        reserva.save()
-
-        messages.success(request, f"Reserva #{reserva.id_reserva} confirmada.")
-        return redirect('habitaciones')
-
-    return redirect('habitaciones')
-
-
-# --- PERFIL DEL USUARIO ---
+# =========================
+# PERFIL Y ADMIN (Resto de tu código igual)
+# =========================
 @login_required(login_url='login')
 def perfil_usuario(request):
-    # Traemos el perfil usando el usuario de la sesión
     perfil, created = Perfil.objects.get_or_create(usuario=request.user)
 
+    reservas = Reserva.objects.filter(
+        usuario=request.user,
+        estado_reserva='Confirmada'
+    ).order_by('-fecha_creacion')
+
     if request.method == 'POST':
-        # Procesamos la subida de imagen a S3
         if 'foto_perfil' in request.FILES:
             perfil.foto_perfil = request.FILES['foto_perfil']
             perfil.save()
-            messages.success(request, '¡Foto de perfil actualizada correctamente!')
+            messages.success(request, '¡Foto actualizada!')
             return redirect('perfil_usuario')
 
-    return render(request, 'user.html', {'perfil': perfil})
+    return render(request, 'user.html', {
+        'perfil': perfil,
+        'reservas': reservas
+    })
 
-
-# --- ADMIN ---
 @login_required
 def agregar_habitacion(request):
     if request.method == 'POST':
@@ -218,17 +254,11 @@ def agregar_habitacion(request):
             return redirect('habitaciones')
     else:
         form = HabitacionForm()
-
-    return render(request, 'form_habitacion.html', {
-        'form': form,
-        'titulo': 'Nueva Habitación'
-    })
-
+    return render(request, 'form_habitacion.html', {'form': form, 'titulo': 'Nueva Habitación'})
 
 @login_required
 def editar_habitacion(request, id):
     habitacion = get_object_or_404(Habitacion, id_habitacion=id)
-
     if request.method == 'POST':
         form = HabitacionForm(request.POST, instance=habitacion)
         if form.is_valid():
@@ -237,8 +267,4 @@ def editar_habitacion(request, id):
             return redirect('habitaciones')
     else:
         form = HabitacionForm(instance=habitacion)
-
-    return render(request, 'form_habitacion.html', {
-        'form': form,
-        'titulo': 'Editar Habitación'
-    })
+    return render(request, 'form_habitacion.html', {'form': form, 'titulo': 'Editar Habitación'})

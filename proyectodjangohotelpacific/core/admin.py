@@ -56,18 +56,17 @@ class HabitacionAdmin(admin.ModelAdmin):
 # =========================
 @admin.register(Reserva)
 class ReservaAdmin(admin.ModelAdmin):
-    """
-    Admin de reservas del sistema.
-    """
     list_display = (
         'id_reserva',
+        'usuario',
         'habitacion',
         'fecha_ingreso',
         'fecha_salida',
-        'estado_reserva'
+        'estado_reserva',
+        'fecha_creacion'
     )
-    list_filter = ('estado_reserva',)
-    search_fields = ('id_reserva',)
+
+    readonly_fields = ('fecha_creacion',)
 
 # =========================
 # FORMULARIO PERSONALIZADO DE PAGO

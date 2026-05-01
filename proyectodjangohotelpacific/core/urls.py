@@ -21,4 +21,6 @@ urlpatterns = [
     path('habitaciones/editar/<int:id>/', views.editar_habitacion, name='editar_habitacion'),
 
     path('perfil/', views.perfil_usuario, name='perfil_usuario'),
+    
+    path('confirmar-pago/<int:id_reserva>/<int:id_habitacion>/', views.confirmar_pago_final, name='confirmar_pago_final'),
 ]
