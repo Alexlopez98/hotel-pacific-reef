@@ -50,7 +50,7 @@
             <div class="d-flex align-items-center gap-3">
                 {% if user.is_authenticated %}
                 <!-- Si está logeado, va al perfil -->
-                <a href="{% url 'perfil' %}" class="text-dark">
+                <a href="{% url 'perfil_usuario' %}" class="text-dark">
                     <i class="fas fa-user-circle fa-2x" style="color: var(--color-primario);"></i>
                 </a>
                 {% else %}

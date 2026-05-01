@@ -1,18 +1,28 @@
 from django.contrib import admin
 from django import forms
-from .models import Habitacion, Reserva, HabitacionImagen, Usuario, Pago
+# IMPORTANTE: Cambiamos 'Usuario' por 'Perfil'
+from .models import Habitacion, Reserva, HabitacionImagen, Perfil, Pago
 
 # =========================
-# USUARIO
+# PERFIL (Reemplaza a Usuario)
 # =========================
-@admin.register(Usuario)
-class UsuarioAdmin(admin.ModelAdmin):
+@admin.register(Perfil)
+class PerfilAdmin(admin.ModelAdmin):
     """
-    Admin de usuarios del sistema.
+    Admin de perfiles extendidos de usuarios.
     """
-    list_display = ('id_usuario', 'rut', 'nombre', 'correo', 'rol')
-    search_fields = ('rut', 'nombre', 'correo')
+    # Usamos métodos personalizados para traer el nombre y correo desde la tabla de Django
+    list_display = ('id_perfil', 'rut', 'get_nombre', 'get_correo', 'rol')
+    search_fields = ('rut', 'usuario__first_name', 'usuario__email')
     list_filter = ('rol',)
+
+    def get_nombre(self, obj):
+        return obj.usuario.first_name
+    get_nombre.short_description = 'Nombre'
+
+    def get_correo(self, obj):
+        return obj.usuario.email
+    get_correo.short_description = 'Correo'
 
 
 # =========================

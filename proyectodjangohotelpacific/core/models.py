@@ -1,31 +1,31 @@
 from django.db import models
+from django.contrib.auth.models import User
 
-class Usuario(models.Model):
-    # Definimos las opciones (Valor para la BD, Etiqueta para el usuario)
+# --- MODELO DE PERFIL (Reemplaza a tu antiguo modelo Usuario) ---
+class Perfil(models.Model):
     ROLES_CHOICES = [
         ('Turista', 'Turista'),
         ('Administrador', 'Administrador'),
     ]
 
-    id_usuario = models.AutoField(primary_key=True)
-    rut = models.CharField(max_length=12, unique=True)
-    nombre = models.CharField(max_length=100)
-    correo = models.CharField(max_length=100, unique=True)
+    id_perfil = models.AutoField(primary_key=True)
+    # Vinculamos 1 a 1 con el usuario interno de Django
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, db_column='ID_USUARIO')
     
-    # Agregamos 'choices' aquí
-    rol = models.CharField(
-        max_length=20, 
-        choices=ROLES_CHOICES, 
-        default='Turista'
-    )
+    rut = models.CharField(max_length=12, unique=True)
+    rol = models.CharField(max_length=20, choices=ROLES_CHOICES, default='Turista')
+    # Sube la imagen a la carpeta usuarios/perfiles/ en tu S3
+    foto_perfil = models.ImageField(upload_to='usuarios/perfiles/', null=True, blank=True, db_column='FOTO_PERFIL_URL')
 
     class Meta:
-        managed = False # Seguimos respetando tu tabla de Oracle
-        db_table = 'usuarios'
+        managed = False # Recuerda crear la tabla PERFILES en Oracle
+        db_table = 'perfiles'
 
     def __str__(self):
-        return self.nombre
+        return f"Perfil de {self.usuario.first_name} - RUT: {self.rut}"
 
+
+# --- MODELOS DE NEGOCIO (Intactos) ---
 class Habitacion(models.Model):
     id_habitacion = models.AutoField(primary_key=True)
     numero = models.CharField(max_length=10, unique=True)
@@ -49,14 +49,12 @@ class HabitacionImagen(models.Model):
         Habitacion, 
         related_name='imagenes_extra', 
         on_delete=models.CASCADE, 
-        db_column='id_habitacion' # Conecta con ID_HABITACION
+        db_column='id_habitacion' 
     )
-    # db_column le dice a Django el nombre real en Oracle
     imagen = models.ImageField(upload_to='habitaciones/extra/', db_column='IMAGEN_URL')
 
     class Meta:
         managed = False
-        # Ajustado al nombre exacto de tu tabla en plural
         db_table = 'habitacion_imagenes' 
 
     def __str__(self):
@@ -78,13 +76,9 @@ class Reserva(models.Model):
 
 class Pago(models.Model):
     id_pago = models.AutoField(primary_key=True)
-
     id_reserva = models.IntegerField(db_column='id_reserva')
-
     monto_pagado = models.DecimalField(max_digits=10, decimal_places=2, db_column='monto_pagado')
-
     metodo_pago = models.CharField(max_length=50)
-
     fecha_pago = models.DateTimeField()
 
     class Meta:

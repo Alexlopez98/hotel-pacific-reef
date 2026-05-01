@@ -20,5 +20,5 @@ urlpatterns = [
 
     path('habitaciones/editar/<int:id>/', views.editar_habitacion, name='editar_habitacion'),
 
-    path('perfil/', views.perfil_usuario, name='perfil'),
+    path('perfil/', views.perfil_usuario, name='perfil_usuario'),
 ]

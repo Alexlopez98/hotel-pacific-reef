@@ -4,7 +4,8 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from functools import wraps
-from .models import Habitacion, Reserva
+# Importamos el Perfil recién creado
+from .models import Habitacion, Reserva, Pago, Perfil
 from .forms import HabitacionForm
 from datetime import timedelta, datetime
 import json
@@ -35,20 +36,38 @@ def rooms_view(request):
 def register_view(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre_completo')
+        rut_cuerpo = request.POST.get('rut_cuerpo')
+        rut_dv = request.POST.get('rut_dv')
         email = request.POST.get('email')
         password = request.POST.get('password')
 
+        rut_completo = f"{rut_cuerpo}-{rut_dv}"
+
+        # 1. Validar correo en Django
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Este correo ya está registrado.')
             return redirect('registro')
 
+        # 2. Validar RUT en tu tabla Perfil
+        if Perfil.objects.filter(rut=rut_completo).exists():
+            messages.error(request, 'Este RUT ya está registrado.')
+            return redirect('registro')
+
+        # 3. Crear usuario base
         user = User.objects.create_user(
-            username=email,
+            username=email, # Usamos el email como username para facilitar el login
             email=email,
             password=password
         )
         user.first_name = nombre
         user.save()
+
+        # 4. Crear Perfil extendido en Oracle
+        Perfil.objects.create(
+            usuario=user,
+            rut=rut_completo,
+            rol='Turista'
+        )
 
         login(request, user)
         return redirect('habitaciones')
@@ -62,6 +81,7 @@ def login_view(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
+        # Como en el registro pusimos el email en username, autenticamos directamente
         user = authenticate(request, username=email, password=password)
 
         if user is not None:
@@ -169,10 +189,24 @@ def confirmar_pago_final(request, id_reserva):
 
     return redirect('habitaciones')
 
+
+# --- PERFIL DEL USUARIO ---
 @login_required(login_url='login')
 def perfil_usuario(request):
-    # 'user' ya viene incluido en el request gracias a Django
-    return render(request, 'user.html')
+    # Traemos el perfil usando el usuario de la sesión
+    perfil, created = Perfil.objects.get_or_create(usuario=request.user)
+
+    if request.method == 'POST':
+        # Procesamos la subida de imagen a S3
+        if 'foto_perfil' in request.FILES:
+            perfil.foto_perfil = request.FILES['foto_perfil']
+            perfil.save()
+            messages.success(request, '¡Foto de perfil actualizada correctamente!')
+            return redirect('perfil_usuario')
+
+    return render(request, 'user.html', {'perfil': perfil})
+
+
 # --- ADMIN ---
 @login_required
 def agregar_habitacion(request):

@@ -49,12 +49,6 @@
             font-size: 1.1rem;
         }
 
-        .profile-pic-container {
-            position: relative;
-            width: 80px;
-            height: 80px;
-        }
-
         .form-label-custom {
             font-weight: 500;
             color: #666;
@@ -73,8 +67,22 @@
 <body class="py-5">
 
     <div class="container">
+        <!-- ZONA DE ALERTAS (Muestra mensajes de éxito al subir la foto) -->
+        {% if messages %}
+            <div class="row justify-content-center mb-3">
+                <div class="col-lg-12">
+                    {% for message in messages %}
+                        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
         <div class="mb-4">
-            <a href="{% url 'index' %}" class="text-white text-decoration-none small">
+            <a href="{% url 'habitaciones' %}" class="text-white text-decoration-none small">
                 <i class="fas fa-arrow-left"></i> Volver a Pacific Reef
             </a>
         </div>
@@ -85,24 +93,30 @@
             <div class="col-lg-4">
                 <div class="card card-profile p-4">
                     <div class="d-flex align-items-center mb-4">
-                        <img src="https://ui-avatars.com/api/?name={{ user.first_name }}+{{ user.last_name }}&background=432C81&color=fff" 
-                             class="rounded-circle me-3" width="60">
+                        
+                        <!-- LÓGICA PARA MOSTRAR FOTO DE S3 O AVATAR POR DEFECTO -->
+                        {% if perfil.foto_perfil %}
+                            <img src="{{ perfil.foto_perfil.url }}" class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ user.first_name }}&background=432C81&color=fff" class="rounded-circle me-3" width="60">
+                        {% endif %}
+                        
                         <div>
-                            <h6 class="fw-bold mb-0">{{ user.username }}</h6>
-                            <small class="text-muted">{{ user.email }}</small>
+                            <h6 class="fw-bold mb-0">{{ user.first_name }}</h6>
+                            <small class="text-muted">{{ perfil.rut }}</small>
                         </div>
                     </div>
 
                     <nav class="d-flex flex-column gap-2">
-                        <a href="{% url 'perfil' %}" class="nav-link-profile">
+                        <a href="{% url 'perfil_usuario' %}" class="nav-link-profile">
                             <i class="fas fa-user"></i> Mis Datos
                         </a>
-                        <!-- Aquí podrías crear una vista para ver las reservas del usuario -->
                         <a href="#" class="nav-link-profile">
                             <i class="fas fa-concierge-bell"></i> Mis Reservas
                         </a>
                         
-                        <form action="{% url 'logout' %}" method="post" class="m-0 pt-3 border-top mt-2">
+                        <!-- El action del logout asume que tienes una url llamada 'logout' -->
+                        <form action="#" method="post" class="m-0 pt-3 border-top mt-2">
                             {% csrf_token %}
                             <button type="submit" class="nav-link-profile text-danger border-0 bg-transparent">
                                 <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
@@ -118,11 +132,21 @@
                     <h4 class="fw-bold mb-4" style="color: var(--color-primario);">Información Personal</h4>
                     <hr>
 
-                    <form class="mt-4">
+                    <!-- IMPORTANTE: El form ahora tiene enctype y apunta a la vista del perfil -->
+                    <form method="POST" enctype="multipart/form-data" action="{% url 'perfil_usuario' %}" class="mt-4">
+                        {% csrf_token %}
+                        
                         <div class="row mb-4 align-items-center">
-                            <label class="col-sm-4 form-label-custom">Nombre de usuario</label>
+                            <label class="col-sm-4 form-label-custom">Nombre</label>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control border-0 bg-light py-2" value="{{ user.username }}" readonly>
+                                <input type="text" class="form-control border-0 bg-light py-2" value="{{ user.first_name }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4 align-items-center">
+                            <label class="col-sm-4 form-label-custom">RUT</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control border-0 bg-light py-2" value="{{ perfil.rut }}" readonly>
                             </div>
                         </div>
 
@@ -133,22 +157,17 @@
                             </div>
                         </div>
 
-                        <div class="row mb-4 align-items-center">
-                            <label class="col-sm-4 form-label-custom">Nombre</label>
-                            <div class="col-sm-8">
-                                <input type="text" class="form-control border-0 bg-light py-2" value="{{ user.first_name }}" placeholder="No especificado">
-                            </div>
-                        </div>
-
+                        <!-- NUEVO CAMPO PARA SUBIR LA FOTO -->
                         <div class="row mb-5 align-items-center">
-                            <label class="col-sm-4 form-label-custom">Apellido</label>
+                            <label class="col-sm-4 form-label-custom">Foto de Perfil</label>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control border-0 bg-light py-2" value="{{ user.last_name }}" placeholder="No especificado">
+                                <input type="file" name="foto_perfil" accept="image/*" class="form-control py-2">
+                                <small class="text-muted" style="font-size: 0.8rem;">Selecciona una imagen para actualizar tu foto. Se guardará de forma segura en la nube.</small>
                             </div>
                         </div>
 
                         <div class="mt-auto pt-4 border-top">
-                            <button type="button" class="btn btn-save text-white shadow-sm">Actualizar Información</button>
+                            <button type="submit" class="btn btn-save text-white shadow-sm">Actualizar Foto</button>
                         </div>
                     </form>
                 </div>
@@ -156,5 +175,7 @@
 
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
