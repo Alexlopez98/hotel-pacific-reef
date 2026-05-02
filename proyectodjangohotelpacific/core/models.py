@@ -36,6 +36,17 @@ class Habitacion(models.Model):
     descripcion = models.TextField(null=True, blank=True)
     imagen = models.ImageField(upload_to='habitaciones/', null=True, blank=True)
 
+    # --- NUEVOS CAMPOS ---
+    h_ac = models.BooleanField(default=False, db_column='H_AC')
+    h_wifi = models.BooleanField(default=True, db_column='H_WIFI')
+    h_trabajo = models.BooleanField(default=False, db_column='H_TRABAJO')
+    h_tv = models.BooleanField(default=True, db_column='H_TV')
+    h_seguridad = models.BooleanField(default=False, db_column='H_SEGURIDAD')
+    h_mascotas = models.CharField(max_length=50, default='No permitido', db_column='H_MASCOTAS')
+    h_desayuno = models.BooleanField(default=False, db_column='H_DESAYUNO')
+    h_vista_mar = models.BooleanField(default=False, db_column='H_VISTA_MAR')
+    h_limpieza = models.BooleanField(default=True, db_column='H_LIMPIEZA')
+
     class Meta:
         managed = False 
         db_table = 'habitaciones'
@@ -77,7 +88,7 @@ class Reserva(models.Model):
 
     habitacion = models.ForeignKey(
         Habitacion,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         db_column='id_habitacion'
     )
 

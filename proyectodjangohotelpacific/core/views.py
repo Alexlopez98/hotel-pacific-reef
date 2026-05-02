@@ -9,7 +9,8 @@ from .forms import HabitacionForm
 from datetime import timedelta, datetime
 from django.utils import timezone
 import json
-
+from django.db.models import Sum
+from django.db.models.functions import TruncDay, TruncMonth, TruncYear
 # =========================
 # LÓGICA DE CANCELACIÓN (Añadida)
 # =========================
@@ -177,16 +178,14 @@ def crear_reserva_provisional(request, id_habitacion):
             habitacion=hab,
             fecha_ingreso=f_ingreso,
             fecha_salida=f_salida,
-            total_estimado=total,
+            total_estimado=total,  # ← guarda el número completo ej: 480000
             estado_reserva='Pendiente'
         )
 
-        return render(request, 'pago.html', {
-            'hab': hab,
-            'reserva': reserva,
-            'total': total,
-            'parcial': int(total * 0.3),
-        })
+        # ✅ Redirige a confirmar_pago_final en vez de renderizar directo
+        return redirect('confirmar_pago_final', 
+                        id_reserva=reserva.id_reserva, 
+                        id_habitacion=id_habitacion)
 
     except Exception as e:
         print("ERROR REAL:", e)
@@ -197,28 +196,48 @@ def crear_reserva_provisional(request, id_habitacion):
 # CONFIRMAR PAGO
 # =========================
 @login_required
-def confirmar_pago_final(request, id_reserva, id_habitacion): # <--- Recibe ambos IDs
+def confirmar_pago_final(request, id_reserva, id_habitacion):
+    habitacion = get_object_or_404(Habitacion, id_habitacion=id_habitacion)
+
+    try:
+        reserva = Reserva.objects.get(id_reserva=id_reserva)
+    except Reserva.DoesNotExist:
+        messages.error(request, "El tiempo de reserva ha expirado. Por favor, intenta reservar de nuevo.")
+        return redirect('roomdetail', hab_id=id_habitacion)
+
+    # Calcular noches
+    delta = reserva.fecha_salida - reserva.fecha_ingreso
+    noches = delta.days if delta.days > 0 else 1
+
+    # Calcular montos
+    total = reserva.total_estimado
+    parcial = round(float(total) * 0.3, 2)
+
     if request.method == 'POST':
-        try:
-            # Intentamos buscar la reserva en la base de datos
-            reserva = Reserva.objects.get(id_reserva=id_reserva)
-            
-            # Si existe, la confirmamos
-            reserva.estado_reserva = 'Confirmada'
-            reserva.save()
-            
-            messages.success(request, "¡Pago procesado! Tu reserva en Pacific Reef está lista.")
-            return redirect('habitaciones')
+        metodo = request.POST.get('metodo_pago', 'Tarjeta')
 
-        except Reserva.DoesNotExist:
-            # Si NO existe (porque tu 'cinta transportadora' la borró de Oracle)
-            # Mandamos el mensaje que capturará tu bloque HTML con el icono de alerta
-            messages.error(request, "El tiempo de reserva ha expirado (10 segundos). Por favor, intenta reservar de nuevo.")
-            
-            # Redirigimos al detalle de la habitación usando el id_habitacion que pasamos por la URL
-            return redirect('roomdetail', hab_id=id_habitacion)
+        Pago.objects.create(
+            id_reserva=reserva.id_reserva,
+            monto_pagado=parcial,
+            metodo_pago=metodo,
+            fecha_pago=datetime.now(),
+        )
 
-    return redirect('habitaciones')
+        reserva.estado_reserva = 'Confirmada'
+        reserva.save()
+
+        messages.success(request, "¡Pago procesado con éxito! Te esperamos en Pacific Reef.")
+        return redirect('habitaciones')
+
+    context = {
+        'reserva': reserva,
+        'hab': habitacion,
+        'noches': noches,
+        'total': int(total),
+        'parcial': int(parcial),
+    }
+
+    return render(request, 'pago.html', context)
 
 # =========================
 # PERFIL Y ADMIN (Resto de tu código igual)
@@ -268,3 +287,46 @@ def editar_habitacion(request, id):
     else:
         form = HabitacionForm(instance=habitacion)
     return render(request, 'form_habitacion.html', {'form': form, 'titulo': 'Editar Habitación'})
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        # Verificamos si el usuario tiene un perfil y si es Administrador
+        if hasattr(request.user, 'perfil') and request.user.perfil.rol == 'Administrador':
+            return view_func(request, *args, **kwargs)
+        
+        messages.error(request, "Acceso denegado. Se requieren permisos de Administrador.")
+        return redirect('index') # O a donde quieras mandarlos
+    return _wrapped_view
+
+@login_required
+@admin_required
+def dashboard_admin(request):
+    # Dinero total histórico
+    total_historico = Pago.objects.aggregate(Sum('monto_pagado'))['monto_pagado__sum'] or 0
+
+    # Ganancias por Año
+    por_anio = Pago.objects.annotate(periodo=TruncYear('fecha_pago'))\
+                           .values('periodo')\
+                           .annotate(total=Sum('monto_pagado'))\
+                           .order_by('-periodo')
+
+    # Ganancias por Mes
+    por_mes = Pago.objects.annotate(periodo=TruncMonth('fecha_pago'))\
+                          .values('periodo')\
+                          .annotate(total=Sum('monto_pagado'))\
+                          .order_by('-periodo')[:12] # Últimos 12 meses
+
+    # Ganancias por Día
+    por_dia = Pago.objects.annotate(periodo=TruncDay('fecha_pago'))\
+                          .values('periodo')\
+                          .annotate(total=Sum('monto_pagado'))\
+                          .order_by('-periodo')[:7] # Última semana
+
+    context = {
+        'total_historico': total_historico,
+        'por_anio': por_anio,
+        'por_mes': por_mes,
+        'por_dia': por_dia,
+    }
+    return render(request, 'admin_dashboard.html', context)

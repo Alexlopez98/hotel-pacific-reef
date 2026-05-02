@@ -39,15 +39,11 @@ class HabitacionImagenInline(admin.TabularInline):
 
 @admin.register(Habitacion)
 class HabitacionAdmin(admin.ModelAdmin):
-    """
-    Admin de Habitaciones:
-    - listado con info clave
-    - filtros por estado y categoría
-    - soporte para imágenes adicionales
-    """
-    list_display = ('numero', 'categoria', 'capacidad', 'precio_diario', 'estado')
+    # Agregamos los nuevos campos al listado para verlos de un vistazo
+    list_display = ('numero', 'categoria', 'capacidad', 'precio_diario', 'estado', 'h_wifi', 'h_ac', 'h_vista_mar')
     search_fields = ('numero', 'categoria')
-    list_filter = ('estado', 'categoria')
+    # Filtros laterales para encontrar rápido habitaciones con servicios específicos
+    list_filter = ('estado', 'categoria', 'h_wifi', 'h_ac', 'h_vista_mar', 'h_mascotas')
     inlines = [HabitacionImagenInline]
 
 

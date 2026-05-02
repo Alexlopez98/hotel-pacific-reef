@@ -77,6 +77,29 @@
             padding: 0;
             box-shadow: none !important;
         }
+
+        .info-superior-suelta {
+            padding: 10px 5px;
+        }
+
+        .amenities-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-weight: 600;
+            font-family: 'Georgia', serif;
+        }
+
+        .dot-separator {
+            margin-left: 8px;
+            opacity: 0.3;
+        }
+
+        .descripcion-figma {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            line-height: 1.5;
+        }
     </style>
 </head>
 
@@ -165,66 +188,118 @@
             </div>
 
             <!-- Reserva -->
+            <!-- Columna Derecha corregida -->
+            <!-- Columna Derecha con ambos recuadros blancos -->
             <div class="col-lg-5">
+
+                <!-- 1. RECUADRO DE AMENITIES Y DESCRIPCIÓN -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <div class="amenities-list">
+                            <div class="amenity-item"><i class="fas fa-users"></i> {{ hab.capacidad }} Huéspedes <span
+                                    class="dot-separator">|</span></div>
+
+                            {% if hab.h_ac %}
+                            <div class="amenity-item"><i class="fas fa-wind"></i> Aire acondicionado <span
+                                    class="dot-separator">|</span></div>
+                            {% endif %}
+
+                            {% if hab.h_wifi %}
+                            <div class="amenity-item"><i class="fas fa-wifi"></i> Wifi <span
+                                    class="dot-separator">|</span></div>
+                            {% endif %}
+
+                            {% if hab.h_tv %}
+                            <div class="amenity-item"><i class="fas fa-tv"></i> Smart TV <span
+                                    class="dot-separator">|</span></div>
+                            {% endif %}
+
+                            {% if hab.h_vista_mar %}
+                            <div class="amenity-item"><i class="fas fa-umbrella-beach"></i> Vista al mar <span
+                                    class="dot-separator">|</span></div>
+                            {% endif %}
+
+                            {% if hab.h_desayuno %}
+                            <div class="amenity-item"><i class="fas fa-coffee"></i> Desayuno a la habitación <span
+                                    class="dot-separator">|</span></div>
+                            {% endif %}
+
+                            {% if hab.h_mascotas != 'No permitido' %}
+                            <div class="amenity-item"><i class="fas fa-paw"></i> Acepta mascotas {{ hab.h_mascotas|lower}}s</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- CORRECCIÓN LÍNEA 234: Se agregaron los puntos y coma y se corrigió la sintaxis -->
+                        <p class="descripcion-figma mt-3 mb-0"
+                            style="font-size: 1.05rem; color: #444; border-top: 1px solid #eee; padding-top: 1rem;">
+                            "{{hab.descripcion}}"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2. TARJETA DE RESERVA -->
                 <form action="{% url 'crear_reserva_provisional' hab.id_habitacion %}" method="POST">
                     {% csrf_token %}
                     <input type="hidden" name="fecha_ingreso" id="input_ingreso">
                     <input type="hidden" name="fecha_salida" id="input_salida">
                     <input type="hidden" name="total_estimado" id="input_total">
 
-                    <div class="bg-white p-4 rounded-4 shadow-lg border">
-                        <div id="header-reserva" class="mb-4">
-                            <h2 id="txt-noches" class="fw-bold mb-1">Selecciona fechas</h2>
-                            <p class="text-muted small mb-0">Introduce tus fechas para el total</p>
-                        </div>
-
-                        <div class="reserva-box rounded-3 d-flex mb-3" id="trigger-calendar">
-                            <div class="flex-fill p-3 border-end">
-                                <label class="d-block small fw-bold text-uppercase mb-0"
-                                    style="font-size: 0.65rem;">Llegada</label>
-                                <input type="text" id="view-llegada"
-                                    class="form-control border-0 p-0 shadow-none bg-transparent"
-                                    placeholder="dd/mm/aaaa" readonly>
+                    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="reserva-body p-4">
+                            <div id="header-reserva" class="mb-4">
+                                <h2 id="txt-noches" class="fw-bold mb-1 h4">Selecciona fechas</h2>
+                                <p class="text-muted small mb-0">Introduce tus fechas para calcular el total</p>
                             </div>
-                            <div class="flex-fill p-3">
-                                <label class="d-block small fw-bold text-uppercase mb-0"
-                                    style="font-size: 0.65rem;">Salida</label>
-                                <input type="text" id="view-salida"
-                                    class="form-control border-0 p-0 shadow-none bg-transparent"
-                                    placeholder="dd/mm/aaaa" readonly>
+
+                            <div class="reserva-box d-flex mb-3" id="trigger-calendar">
+                                <div class="flex-fill p-3 border-end text-center">
+                                    <label class="d-block small fw-bold text-uppercase mb-0"
+                                        style="font-size: 0.65rem;">Llegada</label>
+                                    <input type="text" id="view-llegada"
+                                        class="form-control border-0 p-0 shadow-none bg-transparent text-center"
+                                        placeholder="dd/mm/aaaa" readonly>
+                                </div>
+                                <div class="flex-fill p-3 text-center">
+                                    <label class="d-block small fw-bold text-uppercase mb-0"
+                                        style="font-size: 0.65rem;">Salida</label>
+                                    <input type="text" id="view-salida"
+                                        class="form-control border-0 p-0 shadow-none bg-transparent text-center"
+                                        placeholder="dd/mm/aaaa" readonly>
+                                </div>
                             </div>
-                        </div>
 
-                        <input type="text" id="datepicker" class="d-none" data-bloqueadas='{{ fechas_bloqueadas|safe }}'
-                            data-precio="{{ hab.precio_diario|stringformat:'d' }}">
+                            <input type="text" id="datepicker" class="d-none"
+                                data-bloqueadas='{{ fechas_bloqueadas|safe }}'
+                                data-precio="{{ hab.precio_diario|stringformat:'d' }}">
 
-                        <div id="resumen-reserva" class="d-none">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>$<span id="txt-precio-unitario">0</span> x <span id="noches-count">0</span>
-                                    noches</span>
-                                <span id="subtotal" class="fw-bold">$0</span>
+                            <div id="resumen-reserva" class="d-none">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>$<span id="txt-precio-unitario">0</span> x <span id="noches-count">0</span>
+                                        noches</span>
+                                    <span id="subtotal" class="fw-bold">$0</span>
+                                </div>
+                                <hr>
+                                <!-- CORRECCIÓN LÍNEA 258: Punto y coma final en el color -->
+                                <div class="d-flex justify-content-between fs-4 fw-bold mb-4">
+                                    <span>Total</span>
+                                    <span id="total-pago" style="color: #432C81;">$0</span>
+                                </div>
                             </div>
-                            <hr>
-                            <div class="d-flex justify-content-between fs-4 fw-bold mb-4">
-                                <span>Total</span>
-                                <span id="total-pago" style="color: var(--color-primario);">$0</span>
+
+                            <button type="submit" id="btn-reservar"
+                                class="btn btn-lg w-100 rounded-3 fw-bold text-uppercase py-3 text-white" disabled
+                                style="background-color: #432C81;">
+                                Reservar Ahora
+                            </button>
+
+                            <div class="text-center mt-3">
+                                <button type="button" id="btn-clear"
+                                    class="btn btn-link btn-sm text-muted text-decoration-none">Borrar fechas</button>
                             </div>
-                        </div>
-
-                        <button type="submit" id="btn-reservar"
-                            class="btn btn-lg w-100 rounded-3 fw-bold text-uppercase py-3 text-white" disabled
-                            style="background-color: var(--color-primario);">
-                            Reservar Ahora
-                        </button>
-
-                        <div class="text-center mt-3">
-                            <button type="button" id="btn-clear" class="btn btn-link btn-sm text-dark p-0">Borrar
-                                fechas</button>
                         </div>
                     </div>
                 </form>
             </div>
-        </div>
     </main>
 
     <!-- Modal Imagen -->

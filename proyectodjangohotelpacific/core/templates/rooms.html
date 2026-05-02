@@ -23,19 +23,56 @@
             transform: translateY(-5px);
         }
 
-        .btn-reservar {
+        .amenities-list {
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 6px; 
+            align-items: center;
+        }
+
+        .amenity-item {
+            white-space: nowrap; 
+            display: flex;
+            align-items: center;
+        }
+
+        .amenities-list i {
+            color: #666;
+            margin-right: 5px;
+            font-size: 0.85rem;
+        }
+
+        /* El separador ahora tiene un margen a la izquierda para ir DESPUÉS del texto */
+        .dot-separator {
+            color: #ccc;
+            font-weight: bold;
+            margin-left: 6px;
+        }
+
+        .btn-ver-detalles {
             background-color: var(--color-secundario);
-            border-radius: 8px;
-            transition: 0.3s;
             color: white !important;
+            border-radius: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            letter-spacing: 1px;
         }
 
-        .btn-reservar:hover {
-            background-color: #7ab3b7;
+        .price-big {
+            color: var(--color-primario);
+            font-weight: bold;
+            font-size: 2rem;
         }
 
-        .italic {
-            font-style: italic;
+        .font-serif {
+            font-family: 'Georgia', serif;
         }
     </style>
 </head>
@@ -49,12 +86,10 @@
             </a>
             <div class="d-flex align-items-center gap-3">
                 {% if user.is_authenticated %}
-                <!-- Si está logeado, va al perfil -->
                 <a href="{% url 'perfil_usuario' %}" class="text-dark">
                     <i class="fas fa-user-circle fa-2x" style="color: var(--color-primario);"></i>
                 </a>
                 {% else %}
-                <!-- Si NO está logeado, va al login -->
                 <a href="{% url 'login' %}" class="text-dark">
                     <i class="far fa-user-circle fa-2x" style="color: var(--color-primario);"></i>
                 </a>
@@ -64,7 +99,7 @@
     </nav>
 
     <main class="container py-5 flex-grow-1">
-        <h1 class="display-5 fw-bold text-center mb-5" style="font-family: serif; color: var(--color-primario);">
+        <h1 class="display-5 fw-bold text-center mb-5 font-serif" style="color: var(--color-primario);">
             EXPLORA NUESTRAS HABITACIONES
         </h1>
 
@@ -73,34 +108,51 @@
             <div class="col-md-4 habitacion-card">
                 <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
                     {% if hab.imagen %}
-                    <img src="{{ hab.imagen.url }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                    <img src="{{ hab.imagen.url }}" class="card-img-top" style="height: 240px; object-fit: cover;">
                     {% else %}
-                    <img src="{% static 'img/room1.jpg' %}" class="card-img-top"
-                        style="height: 200px; object-fit: cover;">
+                    <img src="{% static 'img/room1.jpg' %}" class="card-img-top" style="height: 240px; object-fit: cover;">
                     {% endif %}
 
                     <div class="card-body p-4 d-flex flex-column">
-                        <h5 class="fw-bold mb-1" style="color: var(--color-primario);">
+                        <h4 class="fw-bold mb-3 font-serif" style="color: var(--color-primario);">
                             {{ hab.categoria }}
-                        </h5>
+                        </h4>
 
-                        <p class="small text-secondary mb-3 italic">"{{ hab.descripcion|truncatechars:80 }}"</p>
-
-                        <div class="mt-auto pt-3 border-top text-center">
-                            <div class="mb-3">
-                                <!-- Le ponemos una clase para identificar el precio y un data-value con el número limpio -->
-                                <span class="fw-bold fs-4 d-block precio-formatear"
-                                    style="color: var(--color-primario);"
-                                    data-valor="{{ hab.precio_diario|floatformat:0 }}">
-                                </span>
-                                <small class="text-muted">/ noche</small>
-                            </div>
-
-                            <a href="{% url 'roomdetail' hab.id_habitacion %}"
-                                class="btn btn-reservar w-100 text-uppercase fw-bold shadow-sm">
-                                Ver detalles
-                            </a>
+                        <div class="amenities-list">
+                            <div class="amenity-item"><i class="fas fa-users"></i> {{ hab.capacidad }} Huéspedes <span class="dot-separator">|</span></div>
+                            {% if hab.h_ac %} 
+                                <div class="amenity-item"><i class="fas fa-wind"></i> Aire acondicionado <span class="dot-separator">|</span></div>
+                            {% endif %}
+                            
+                            {% if hab.h_wifi %} 
+                                <div class="amenity-item"><i class="fas fa-wifi"></i> Wifi <span class="dot-separator">|</span></div>
+                            {% endif %}
+                            
+                            {% if hab.h_tv %} 
+                                <div class="amenity-item"><i class="fas fa-tv"></i> Smart TV <span class="dot-separator">|</span></div>
+                            {% endif %}
+                            
+                            {% if hab.h_vista_mar %} 
+                                <div class="amenity-item"><i class="fas fa-umbrella-beach"></i> Vista al mar <span class="dot-separator">|</span></div>
+                            {% endif %}
+                            
+                            {% if hab.h_desayuno %} 
+                                <div class="amenity-item"><i class="fas fa-coffee"></i> Desayuno a la habitación <span class="dot-separator">|</span></div>
+                            {% endif %}
+                            
+                            {% if hab.h_mascotas != 'No permitido' %}
+                                <div class="amenity-item"><i class="fas fa-paw"></i> Acepta mascotas {{ hab.h_mascotas|lower }}</div>
+                            {% endif %}
                         </div>
+
+                        <div class="text-center mt-auto mb-3">
+                            <span class="price-big precio-formatear" data-valor="{{ hab.precio_diario|floatformat:0 }}"></span>
+                            <span class="fs-5 text-muted">/ noche</span>
+                        </div>
+
+                        <a href="{% url 'roomdetail' hab.id_habitacion %}" class="btn btn-ver-detalles">
+                            VER DETALLES
+                        </a>
                     </div>
                 </div>
             </div>
@@ -110,28 +162,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- SCRIPT PARA LOS PUNTOS -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const precios = document.querySelectorAll('.precio-formatear');
-
             precios.forEach(span => {
                 let valor = span.dataset.valor;
-
-                // 🧠 Si viene vacío o undefined → 0
-                if (!valor) {
-                    valor = "0";
-                }
-
-                // 🔥 limpiar cualquier formato raro
+                if (!valor) valor = "0";
                 valor = valor.replace(/[^\d]/g, '');
-
-                // convertir a número seguro
                 valor = Number(valor);
-
-                // 🛡️ evitar NaN
                 if (isNaN(valor)) valor = 0;
-
                 span.innerText = '$' + valor.toLocaleString('es-CL');
             });
         });
