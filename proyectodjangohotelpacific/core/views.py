@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from functools import wraps
-from .models import Habitacion, Reserva, Pago, Perfil
+from .models import Habitacion, HabitacionImagen, Reserva, Pago, Perfil
 from .forms import HabitacionForm
 from datetime import timedelta, datetime
 from django.utils import timezone
@@ -223,29 +223,61 @@ def actualizar_perfil_ajax(request):
 @admin_required
 def agregar_habitacion(request):
     if request.method == 'POST':
-        form = HabitacionForm(request.POST)
+        form = HabitacionForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Habitación creada con éxito en el sistema.')
-            return redirect('dashboard_admin') # <-- Redirige de vuelta al panel
+            # Guardamos la habitación (incluye la imagen principal del form)
+            habitacion = form.save()
+
+            # --- LÓGICA PARA IMÁGENES EXTRA ---
+            # Capturamos la lista de archivos del input 'imagenes_extra'
+            archivos_extra = request.FILES.getlist('imagenes_extra')
+            for f in archivos_extra:
+                HabitacionImagen.objects.create(
+                    habitacion=habitacion,
+                    imagen=f
+                )
+            # ----------------------------------
+
+            messages.success(request, f'Habitación {habitacion.numero} creada con su galería de fotos.')
+            return redirect('dashboard_admin')
     else:
         form = HabitacionForm()
-    return render(request, 'form_habitacion.html', {'form': form, 'titulo': 'Añadir Nueva Habitación'})
+    
+    return render(request, 'form_habitacion.html', {
+        'form': form, 
+        'titulo': 'Añadir Nueva Habitación'
+    })
 
 @login_required
 @admin_required
 def editar_habitacion(request, id):
     habitacion = get_object_or_404(Habitacion, id_habitacion=id)
+    # Traemos las fotos actuales para mostrarlas en el formulario
+    fotos_actuales = habitacion.imagenes_extra.all()
+
     if request.method == 'POST':
-        form = HabitacionForm(request.POST, instance=habitacion)
+        form = HabitacionForm(request.POST, request.FILES, instance=habitacion)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Habitación actualizada correctamente.')
-            return redirect('dashboard_admin') # <-- Redirige de vuelta al panel
+            habitacion = form.save()
+
+            # Si el administrador subió nuevas fotos a la galería
+            nuevas_fotos = request.FILES.getlist('imagenes_extra')
+            for f in nuevas_fotos:
+                HabitacionImagen.objects.create(
+                    habitacion=habitacion,
+                    imagen=f
+                )
+
+            messages.success(request, f'Habitación {habitacion.numero} actualizada.')
+            return redirect('dashboard_admin')
     else:
         form = HabitacionForm(instance=habitacion)
-    return render(request, 'form_habitacion.html', {'form': form, 'titulo': f'Editar Habitación {habitacion.numero}'})
-
+    
+    return render(request, 'form_habitacion.html', {
+        'form': form, 
+        'titulo': f'Editar Habitación {habitacion.numero}',
+        'fotos_actuales': fotos_actuales
+    })
 @login_required
 @admin_required
 def dashboard_admin(request):
