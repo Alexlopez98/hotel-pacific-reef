@@ -69,8 +69,8 @@ DATABASES = {
         'USER': 'HOTEL_ADMIN',
         'PASSWORD': 'Colita02551!',
         'OPTIONS': {
-            'config_dir': r'C:\Users\singu\OneDrive\Escritorio\Django\Wallet_IngenieriaSoftware',
-            'wallet_location': r'C:\Users\singu\OneDrive\Escritorio\Django\Wallet_IngenieriaSoftware',
+            'config_dir': 'C:/Users/alexl/OneDrive/Desktop/Duoc online/Ingenieria de software/Database/Wallet_IngenieriaSoftware',
+            'wallet_location': 'C:/Users/alexl/OneDrive/Desktop/Duoc online/Ingenieria de software/Database/Wallet_IngenieriaSoftware',
             'wallet_password': 'Colita02551!',
         },
     }
